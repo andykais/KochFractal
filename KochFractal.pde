@@ -1,6 +1,6 @@
 //import java.util.ArrayList;
 int resolutionX = 800;
-int resolutionY = 600;
+int resolutionY = 450;
 PVector a, b, c;
 //PVector [] points = new PVector[5];
 ArrayList<PVector> originalShape = new ArrayList<PVector>();
