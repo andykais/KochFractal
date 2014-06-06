@@ -28,44 +28,41 @@ public class Shape {
   }
   //MODIFIERS
   void translate(int i) {
+    // shifts all the points with the previous level as the origin
     float dx = lines.get(i).x - lines.get(0).x;
     float dy = lines.get(i).y - lines.get(0).y;
-    // println(dx, dy);
     for (int w = 0; w < lines.size(); ++w) {
       lines.get(w).x += dx;
       lines.get(w).y += dy;
-      // print(lines.get(w).x,lines.get(w).y," ");
     }
-    // println();
   }
   void rotate(int i) {
+    // rotates the points around the "pivot" 
+    // which is the first point in the new level
+    
+    // gets the new angle change
     float angle = atan2(original.getDiffY(i), original.getDiffX(i));
-    angle = originalAngle - angle;
-    angle *= -1;
-    // print("angle:",angle);
-
+    angle = (originalAngle - angle)*-1;
+    // the point which the others in lines will use as an origin
     PVector pivot = new PVector(lines.get(0).x, lines.get(0).y);
-
     float cosTheta = cos(angle);
     float sinTheta = sin(angle);
-    // println(" cos:",cosTheta,"sin",sinTheta);
-
+    // actually rotating all the points
     for (int w=1; w<lines.size(); ++w) {
       PVector rotating = new PVector(lines.get(w).x, lines.get(w).y);
-
       lines.get(w).x = cosTheta*(rotating.x-pivot.x) - sinTheta*(rotating.y-pivot.y) + pivot.x;
       lines.get(w).y = sinTheta*(rotating.x-pivot.x) + cosTheta*(rotating.y-pivot.y) + pivot.y;
     }
-    // printPoints();
-    // println();
   }
   void dialate(int i) {
+    // shrinks the points with a ratio according to the side vs the whole
+    // of the old depth fractal
     float currentDist = sqrt(pow(getDiffX(i),2) + pow(getDiffY(i),2));
     float ratio = (levelUp-currentDist)/levelUp;
-
+    // dialates the points with the first point in the shape as the origin
+    // (also uses a small formula I came up with to make a new origin)
     for (int w=1; w<lines.size(); ++w) {
       PVector pivot = new PVector(lines.get(0).x, lines.get(0).y);
-
       PVector shrink = new PVector(lines.get(w).x, lines.get(w).y);
       lines.get(w).x = shrink.x - (shrink.x - pivot.x)*ratio;
       lines.get(w).y = shrink.y - (shrink.y - pivot.y)*ratio;
@@ -74,10 +71,8 @@ public class Shape {
   }
   //ACCESSORS
   ArrayList<PVector> returnLines() {return lines;}
-  float getFirstX() {return lines.get(0).x;}
-  float getFirstY() {return lines.get(0).y;}
-  float getChangeX() {return lines.get(0).x - lines.get(lines.size()-1).x;}
-  float getChangeY() {return lines.get(0).y - lines.get(lines.size()-1).y;}
+  float getBaseDX() {return lines.get(0).x - lines.get(lines.size()-1).x;}
+  float getBaseDY() {return lines.get(0).y - lines.get(lines.size()-1).y;}
   float getDiffX(int i) {return lines.get(i).x - lines.get(i+1).x;}
   float getDiffY(int i) {return lines.get(i).y - lines.get(i+1).y;}
   int size() {return lines.size();}
@@ -119,9 +114,10 @@ void setup() {
 
 void mousePressed() {
   if (mouseButton == RIGHT && !startRender) {
+    // initial shape creation according to mouse input
     originalShape.add(new PVector(mouseX, mouseY));
     original = new Shape(originalShape);
-    originalAngle = atan2(original.getChangeY(), original.getChangeX());
+    originalAngle = atan2(original.getBaseDY(), original.getBaseDX());
     original.render();
     print("("+mouseX+","+mouseY+") ");
   }
@@ -152,20 +148,23 @@ void keyPressed() {
 
 void fractalize(Shape current, int depth) {
   if (depth == maxDepth) {
+    //stops the 'fractalizing' at whatever the max depth is
     current.render();
     return;
   }
+  // recursive loop that loops through all the sides and calls itself
   for (int i=0; i<current.size()-1; ++i) {
-    levelUp = sqrt(pow(current.getChangeX(),2)+pow(current.getChangeY(),2));
-    Shape temp = new Shape(current);
-    temp.translate(i);
-    temp.rotate(i);
-    temp.dialate(i);
-    fractalize(temp, depth + 1);
+    levelUp = sqrt(pow(current.getBaseDX(),2)+pow(current.getBaseDY(),2));
+    Shape newDepth = new Shape(current);
+    newDepth.translate(i);
+    newDepth.rotate(i);
+    newDepth.dialate(i);
+    fractalize(newDepth, depth + 1);
   }
 }
 
 void draw() {
+  // only used to reset the canvas whenever the space key is hit
   if (!startRender && originalShape.size() > 0) {
     background(0);
     PVector last = originalShape.get(originalShape.size()-1);
