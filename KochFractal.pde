@@ -143,6 +143,9 @@ void keyPressed() {
     println(); println("--new shape--");
     background(0);
   }
+  if (key == 's') {
+    save("index.jpg");
+  }
 }
 
 
